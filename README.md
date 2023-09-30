@@ -4,6 +4,5 @@ Code from [Python Online Multiplayer Game Development Tutorial](https://youtu.be
 
 I made a few additions:
 
-- Secure Socket connection using TLS
+- Secure Socket connection using TLS ([Read this before running the code](./ssl/README.md))
 - Safer pickle deserialization (this scares the shit out of me in any case)
-
