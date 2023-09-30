@@ -1,0 +1,11 @@
+# Python
+venv
+__pycache__
+# OS
+.DS_Store
+# Certificates stuff
+*.crt
+*.key
+*.pem
+*.srl
+*.csr
