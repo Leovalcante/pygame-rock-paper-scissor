@@ -97,7 +97,6 @@ class SafeUnpickler(pickle.Unpickler):
     def find_class(self, module, name):
         # Only allow safe classes
         if module == current_module.__name__ and name in safe_classes:
-            print("qui?")
             return getattr(current_module, name)
         # Forbid everything else
         raise pickle.UnpicklingError(f"Cannot unpickle {module}.{name}")
