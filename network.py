@@ -1,4 +1,3 @@
-import pickle
 import socket
 import ssl
 
@@ -27,13 +26,13 @@ class Network:
     def connect(self):
         try:
             self.client.connect(self.addr)
-            return deserialize(self.client.recv(config.buff_size))
+            return self.client.recv(config.buff_size).decode()
         except socket.error as e:
             print(f"[!] Got error: {e}")
 
     def send(self, data):
         try:
-            self.client.send(pickle.dumps(data))
+            self.client.send(data.encode())
             return deserialize(self.client.recv(config.buff_size))
         except socket.error as e:
             print(f"[!] Got error: {e}")
