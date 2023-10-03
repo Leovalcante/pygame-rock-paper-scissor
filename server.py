@@ -4,8 +4,8 @@ import socket
 import threading
 
 import config
-from common import printd, deserialize
-from model import Player
+
+from model import Game
 
 
 class Server:
@@ -23,11 +23,9 @@ class Server:
             print(f"[!] Got error: {e}")
             raise
 
-        self.players = [
-            Player(0, 0, 50, 50, (255, 0, 0)),
-            Player(100, 100, 50, 50, (0, 0, 255)),
-        ]
-        self.current_player = 0
+        self.connected = set()
+        self.games = dict()
+        self.id_count = 0
 
     def serve(self):
         self.sox.listen()
@@ -36,10 +34,23 @@ class Server:
         while True:
             conn, addr = self.sox.accept()
             print(f"[+] Incoming connection from: {addr}")
+
+            self.id_count += 1
+
+            p = 0
+            game_id = (self.id_count - 1) // 2
+
+            if self.id_count % 2 == 1:
+                self.games[game_id] = Game(game_id)
+                print(f"[+] Creating a new game {game_id}")
+            else:
+                self.games[game_id].ready = True
+                p = 1
+
             threading.Thread(
-                target=self.handle_connection, args=(conn, addr, self.current_player)
+                target=self.handle_connection,
+                args=(conn, addr, p, game_id),
             ).start()
-            self.current_player += 1
 
     def init_client(self, conn):
         client = conn
@@ -48,29 +59,46 @@ class Server:
 
         return client
 
-    def handle_connection(self, conn, addr, player):
+    def handle_connection(self, conn, addr, p, game_id):
         print(f"[*] Managing connection: {addr}")
         client = self.init_client(conn)
-        client.sendall(pickle.dumps(self.players[player]))
+        client.sendall(str(p).encode())
 
+        reply = ""
         while True:
             try:
-                data = deserialize(client.recv(config.buff_size))
-                printd(f"[*] Got data: {data}")
-            except socket.error as e:
-                print(f"[!] Got error: {e}")
-                data = None
+                data = client.recv(config.buff_size).decode()
+                # printd(f"data: {data}")
+                # printd(f"game_id: {game_id}")
+                # printd(f"games: {self.games}")
+                if game_id in self.games:
+                    game = self.games[game_id]
+                    # printd("here")
 
-            if not data:
-                print(f"[-] Disconnecting {addr}")
-                break
+                    if not data:
+                        break
+                    elif data == "reset":
+                        game.reset()
+                    elif data != "get":
+                        game.play(p, data)
 
-            printd(f"[*] Receiving: {data}")
-            self.players[player] = data
-            reply = self.players[0 if player == 1 else 1]
+                    reply = game
+                    # printd(reply)
 
-            client.sendall(pickle.dumps(reply))
+                    client.sendall(pickle.dumps(reply))
+                else:
+                    break
+            except Exception as ex:
+                print(ex)
 
+        print(f"[!] Lost connection")
+        try:
+            del self.games[game_id]
+            print(f"[-] Closing game {game_id}")
+        except:
+            pass
+
+        self.id_count -= 1
         client.close()
 
     def teardown(self):
