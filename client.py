@@ -2,12 +2,12 @@ import pygame
 
 from network import Network
 
-width = 700
-height = 700
 
-window = pygame.display.set_mode((width, height))
-pygame.font.init()
-pygame.display.set_caption("Rock Paper Scissor Desktop Client")
+# Client vars
+window_width = 700
+window_height = 700
+font_family = "Roboto"
+font_antialias = True
 
 
 class Color:
@@ -18,10 +18,20 @@ class Color:
     blue = (0, 0, 255)
 
 
-font_family = "Roboto"
-font_antialias = True
+class FontSize:
+    sm = 40
+    md = 60
+    lg = 80
+    xl = 90
 
 
+# PyGame initializations
+window = pygame.display.set_mode((window_width, window_height))
+pygame.font.init()
+pygame.display.set_caption("Rock Paper Scissor Desktop Client")
+
+
+# Client buttons
 class Button:
     def __init__(self, text, x, y, color) -> None:
         self.text = text
@@ -33,7 +43,7 @@ class Button:
 
     def draw(self, win):
         pygame.draw.rect(win, self.color, (self.x, self.y, self.width, self.height))
-        font = pygame.font.SysFont(font_family, 40)
+        font = pygame.font.SysFont(font_family, FontSize.sm)
         text = font.render(self.text, font_antialias, Color.white)
         win.blit(
             text,
@@ -50,17 +60,29 @@ class Button:
         )
 
 
+btns = [
+    Button("Rock", 50, 500, Color.red),
+    Button("Paper", 250, 500, Color.green),
+    Button("Scissor", 450, 500, Color.blue),
+]
+
+
+# Manage client window
 def redraw_window(win, game, p):
     win.fill(Color.white)
     if not game.connected():
-        font = pygame.font.SysFont(font_family, 80)
-        text = font.render("Waiting for player", 1, Color.red)
+        font = pygame.font.SysFont(font_family, FontSize.lg)
+        text = font.render("Waiting for player", font_antialias, Color.red)
         win.blit(
             text,
-            (width / 2 - text.get_width() / 2, height / 2 - text.get_height() / 2),
+            (
+                window_width / 2 - text.get_width() / 2,
+                window_height / 2 - text.get_height() / 2,
+            ),
         )
     else:
         font = pygame.font.SysFont(font_family, 60)
+
         text = font.render("Your move", font_antialias, Color.black)
         win.blit(text, (80, 200))
 
@@ -70,40 +92,37 @@ def redraw_window(win, game, p):
         move1 = game.get_player_move(0)
         move2 = game.get_player_move(1)
         if game.both_went():
-            text1 = font.render(move1, font_antialias, Color.black)
-            text2 = font.render(move2, font_antialias, Color.black)
+            msg1 = move1
+            msg2 = move2
         else:
             if game.p1went and p == 0:
-                text1 = font.render(move1, font_antialias, Color.black)
+                msg1 = move1
             elif game.p1went:
-                text1 = font.render("Locked in", font_antialias, Color.black)
+                msg1 = "Locked in"
             else:
-                text1 = font.render("Waiting...", font_antialias, Color.black)
+                msg1 = "Waiting..."
 
             if game.p2went and p == 1:
-                text2 = font.render(move2, font_antialias, Color.black)
+                msg2 = move2
             elif game.p2went:
-                text2 = font.render("Locked in", font_antialias, Color.black)
+                msg2 = "Locked in"
             else:
-                text2 = font.render("Waiting...", font_antialias, Color.black)
+                msg2 = "Waiting..."
 
-            if p == 1:
-                win.blit(text2, (100, 350))
-                win.blit(text1, (400, 350))
-            else:
-                win.blit(text1, (100, 350))
-                win.blit(text2, (400, 350))
+        text1 = font.render(msg1, font_antialias, Color.black)
+        text2 = font.render(msg2, font_antialias, Color.black)
+
+        if p == 1:
+            win.blit(text2, (100, 350))
+            win.blit(text1, (400, 350))
+        else:
+            win.blit(text1, (100, 350))
+            win.blit(text2, (400, 350))
+
         for btn in btns:
             btn.draw(win)
 
     pygame.display.update()
-
-
-btns = [
-    Button("Rock", 50, 500, Color.red),
-    Button("Paper", 250, 500, Color.green),
-    Button("Scissor", 450, 500, Color.blue),
-]
 
 
 def main():
@@ -118,7 +137,7 @@ def main():
         clock.tick(60)
         try:
             game = n.send("get")
-            print(game.moves)
+            # print(game.moves)  # uncomment this to cheat with your friends ;)
         except:
             run = False
             print(f"[!] Got error: couldn't get game")
@@ -134,17 +153,21 @@ def main():
                 print(f"[!] Got error: couldn't get game")
                 break
 
-            font = pygame.font.SysFont(font_family, 90)
+            font = pygame.font.SysFont(font_family, FontSize.xl)
             if game.winner() == player:
-                text = font.render("You won!", font_antialias, Color.red)
+                msg = "You won!"
             elif game.winner() == -1:
-                text = font.render("Tie game!", font_antialias, Color.red)
+                msg = "Tie game!"
             else:
-                text = font.render("You lost...", font_antialias, Color.red)
+                msg = "You lost..."
 
+            text = font.render(msg, font_antialias, Color.red)
             window.blit(
                 text,
-                (width / 2 - text.get_width() / 2, height / 2 - text.get_height() / 2),
+                (
+                    window_width / 2 - text.get_width() / 2,
+                    window_height / 2 - text.get_height() / 2,
+                ),
             )
             pygame.display.update()
             pygame.time.delay(2000)
